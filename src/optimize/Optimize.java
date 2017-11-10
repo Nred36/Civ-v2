@@ -5,20 +5,7 @@
  */
 package optimize;//package name
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.List;
-import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -32,21 +19,21 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import javax.swing.JApplet;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.Timer;
 
-public class Optimize extends JPanel implements KeyListener, MouseMotionListener, MouseWheelListener, MouseListener {
+import org.newdawn.slick.*;
+import org.newdawn.slick.geom.*;
+
+public class Optimize extends BasicGame {
 
     Graphics2D dr;
-    int mX, mY, px=-520, py=-520;
-    Polygon[][] hex = new Polygon[500][500];
+    int mX, mY, px = 250, py = 250, zoom = 1, tx = -60, ty = -22;
+    Polygon[][] hex = new Polygon[20][20];
     int[][][] grid = new int[500][500][3];
     ArrayList<Unit> units = new ArrayList<Unit>();
     long time;
 
-    public Optimize() {//program name
+    public Optimize(String s) {//program name
+        super(s);
         try {
             FileReader fr = new FileReader("map.txt");
             BufferedReader br = new BufferedReader(fr); //reads map from text file
@@ -60,30 +47,33 @@ public class Optimize extends JPanel implements KeyListener, MouseMotionListener
         } catch (IOException a) {
             System.out.println("Couldn't Load");
         }
-        for (int r = 0; r < 500; r++) {
-            for (int c = 0; c < 500; c++) {
+        for (int r = 0; r < 20; r++) {
+            for (int c = 0; c < 20; c++) {
                 Hexagon(r, c);
             }
         }
-        addKeyListener(this);
-        addMouseWheelListener(this);
-        addMouseMotionListener(this);
-        addMouseListener(this);
-        repaint();
+        spawn(5 + px, 5 + py);
     }
 
-    public static void main(String[] args) {
-        Optimize panel = new Optimize();
-        JFrame f = new JFrame("");
-        f.setResizable(false);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(panel);
-        f.setSize(595, 707);
-        f.setVisible(true);
-        f.setLocationRelativeTo(null);
+    public static void main(String[] args) throws SlickException {
+//        Optimize panel = new Optimize();
+//        JFrame f = new JFrame("");
+//        f.setResizable(false);
+//        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        f.add(panel);
+//        f.setSize(603, 704);
+//        f.setVisible(true);
+//        f.setLocationRelativeTo(null);
+        AppGameContainer app = new AppGameContainer(new Optimize("ww"));
+        app.setDisplayMode(600, 676, false);
+        app.setSmoothDeltas(true);
+        app.setTargetFrameRate(60);
+        app.setShowFPS(false);
+        app.start();
     }
 
     public void Hexagon(int r, int c) {
+        // Polygon pp = new
         Polygon p = new Polygon();
         int s = 12, y = (int) (c * 3 * Math.sqrt(3.0));
         if (r % 2 == 0) {
@@ -95,12 +85,16 @@ public class Optimize extends JPanel implements KeyListener, MouseMotionListener
         if (c >= s - 1) {
             y -= 1;
         }
+        if (c >= s / 2 + s - 2) {
+            y -= 1;
+        }
         p.addPoint(s + r * s * 3, y + s * c * 3);
-        p.addPoint(3 * s + r * s * 3, y + s * c * 3);
-        p.addPoint(4 * s + r * s * 3, y + s * c * 3 + (int) (s * Math.sqrt(3.0)));
-        p.addPoint(3 * s + r * s * 3, y + s * c * 3 + (int) (s * 2 * Math.sqrt(3.0)));
-        p.addPoint(s + r * s * 3, y + s * c * 3 + (int) (s * 2 * Math.sqrt(3.0)));
-        p.addPoint(r * s * 3, y + s * c * 3 + (int) (s * Math.sqrt(3.0)));
+        p.addPoint(3 * s + r * s * 3, y + s * c * (float) 3.001);//
+        p.addPoint(4 * s + r * s * 3, y + s * c * 3 + (float) (s * Math.sqrt(3.0)));
+        p.addPoint(3 * s + r * s * 3, y + s * c * 3 + (float) (s * 2 * Math.sqrt(3.0)));
+        p.addPoint(s + r * s * 3, y + s * c * 3 + (float) (s * 2 * Math.sqrt(3.0)));
+        p.addPoint(r * s * 3, y + s * c * 3 + (float) (s * Math.sqrt(3.0)));
+
         hex[r][c] = p;
     }
 
@@ -140,73 +134,94 @@ public class Optimize extends JPanel implements KeyListener, MouseMotionListener
         return c;
     }
 
-    public Polygon borders(int r, int c) {
-        Polygon p = new Polygon();
+    /*  public Polygon borders(int r, int c) {
+     Polygon p = new Polygon();
 
-        p.addPoint(hex[r][c - 1].xpoints[0], hex[r][c - 1].ypoints[0]);
-        p.addPoint(hex[r][c - 1].xpoints[1], hex[r][c - 1].ypoints[1]);
-        p.addPoint(hex[r][c - 1].xpoints[2], hex[r][c - 1].ypoints[2]);
-        p.addPoint(hex[r + 1][c - 1].xpoints[1], hex[r + 1][c - 1].ypoints[1]);
-        p.addPoint(hex[r + 1][c - 1].xpoints[2], hex[r + 1][c - 1].ypoints[2]);
-        p.addPoint(hex[r + 1][c - 1].xpoints[3], hex[r + 1][c - 1].ypoints[3]);
-        p.addPoint(hex[r + 1][c].xpoints[2], hex[r + 1][c].ypoints[2]);
-        p.addPoint(hex[r + 1][c].xpoints[3], hex[r + 1][c].ypoints[3]);
-        p.addPoint(hex[r + 1][c].xpoints[4], hex[r + 1][c].ypoints[4]);
-        p.addPoint(hex[r][c + 1].xpoints[3], hex[r][c + 1].ypoints[3]);
-        p.addPoint(hex[r][c + 1].xpoints[4], hex[r][c + 1].ypoints[4]);
-        p.addPoint(hex[r][c + 1].xpoints[5], hex[r][c + 1].ypoints[5]);
-        p.addPoint(hex[r - 1][c].xpoints[3], hex[r - 1][c].ypoints[3]);
-        p.addPoint(hex[r - 1][c].xpoints[4], hex[r - 1][c].ypoints[4]);
-        p.addPoint(hex[r - 1][c].xpoints[5], hex[r - 1][c].ypoints[5]);
-        p.addPoint(hex[r - 1][c].xpoints[0], hex[r - 1][c].ypoints[0]);
-        p.addPoint(hex[r - 1][c - 1].xpoints[5], hex[r - 1][c - 1].ypoints[5]);
-        p.addPoint(hex[r - 1][c - 1].xpoints[0], hex[r - 1][c - 1].ypoints[0]);
-        p.addPoint(hex[r - 1][c - 1].xpoints[1], hex[r - 1][c - 1].ypoints[1]);
-        return p;
+     p.addPoint(hex[r][c - 1].xpoints[0], hex[r][c - 1].ypoints[0]);
+     p.addPoint(hex[r][c - 1].xpoints[1], hex[r][c - 1].ypoints[1]);
+     p.addPoint(hex[r][c - 1].xpoints[2], hex[r][c - 1].ypoints[2]);
+     p.addPoint(hex[r + 1][c - 1].xpoints[1], hex[r + 1][c - 1].ypoints[1]);
+     p.addPoint(hex[r + 1][c - 1].xpoints[2], hex[r + 1][c - 1].ypoints[2]);
+     p.addPoint(hex[r + 1][c - 1].xpoints[3], hex[r + 1][c - 1].ypoints[3]);
+     p.addPoint(hex[r + 1][c].xpoints[2], hex[r + 1][c].ypoints[2]);
+     p.addPoint(hex[r + 1][c].xpoints[3], hex[r + 1][c].ypoints[3]);
+     p.addPoint(hex[r + 1][c].xpoints[4], hex[r + 1][c].ypoints[4]);
+     p.addPoint(hex[r][c + 1].xpoints[3], hex[r][c + 1].ypoints[3]);
+     p.addPoint(hex[r][c + 1].xpoints[4], hex[r][c + 1].ypoints[4]);
+     p.addPoint(hex[r][c + 1].xpoints[5], hex[r][c + 1].ypoints[5]);
+     p.addPoint(hex[r - 1][c].xpoints[3], hex[r - 1][c].ypoints[3]);
+     p.addPoint(hex[r - 1][c].xpoints[4], hex[r - 1][c].ypoints[4]);
+     p.addPoint(hex[r - 1][c].xpoints[5], hex[r - 1][c].ypoints[5]);
+     p.addPoint(hex[r - 1][c].xpoints[0], hex[r - 1][c].ypoints[0]);
+     p.addPoint(hex[r - 1][c - 1].xpoints[5], hex[r - 1][c - 1].ypoints[5]);
+     p.addPoint(hex[r - 1][c - 1].xpoints[0], hex[r - 1][c - 1].ypoints[0]);
+     p.addPoint(hex[r - 1][c - 1].xpoints[1], hex[r - 1][c - 1].ypoints[1]);
+     return p;
+     }*/
+//    public void paintComponent(Graphics g) {
+//        dr = (Graphics2D) g;
+//        dr.setFont(new Font("TimesRoman", Font.PLAIN, 20));
+//
+//        dr.scale(zoom, zoom);
+//        dr.fillRect(0, 0, 1000, 1000);
+//        dr.translate(-12, -22);
+//        for (int r = 0; r < 17; r++) {
+//            for (int c = 0; c < 17; c++) {
+//                dr.setStroke(new BasicStroke(1));
+//                dr.setColor(col(grid[r + px][c + py][0]));
+//                dr.fillPolygon(hex[r][c]);
+//                dr.draw(hex[r][c]);
+//                dr.setColor(Color.black);
+//                dr.drawPolygon(hex[r][c]);
+//            }
+//        }
+//        //dr.fillRect(12, 43, 333, 455);
+//
+//        repaint();
+//        requestFocus();
+//        setFocusTraversalKeysEnabled(false);
+//    }
+    @Override
+    public void init(GameContainer gc) throws SlickException {
+        
     }
 
-    public void paintComponent(Graphics g) {
-        dr = (Graphics2D) g;
-        dr.setFont(new Font("TimesRoman", Font.PLAIN, 20));
-        
-        
-        
-        super.paintComponents(g);
-dr.translate(px, py);
-        for (int r = 0; r < 500; r++) {
-            for (int c = 0; c < 500; c++) {
-                dr.setStroke(new BasicStroke(1));
-                dr.setColor(col(grid[r][c][0]));
-                dr.fillPolygon(hex[r][c]);
-                dr.setColor(Color.black);
-                dr.drawPolygon(hex[r][c]);
+    public void mouseWheelMoved(int change){
+        if (zoom < 3 && e.getPreciseWheelRotation() < 0) {
+            zoom++;
+        } else if (zoom > -5 && e.getPreciseWheelRotation() > 0) {
+            zoom--;
+        }
+    }
+            
+    @Override
+    public void update(GameContainer gc, int i) throws SlickException {   
+        if (gc.getInput().isMouseButtonDown(0)) {
+            if (System.currentTimeMillis() - time > 100) {
+                if (gc.getInput().getMouseX() > mX && px > 0) {
+                    mX = gc.getInput().getMouseX();
+                    px--;
+                } else if (gc.getInput().getMouseX() < mX && px < 500) {
+                    mX = gc.getInput().getMouseX();
+                    px++;
+                }
+                if (gc.getInput().getMouseY() > mY && py > 0) {
+                    mY = gc.getInput().getMouseY();
+                    py--;
+                } else if (gc.getInput().getMouseY() < mY && py < 500) {
+                    mY = gc.getInput().getMouseY();
+                    py++;
+                }
+                time = System.currentTimeMillis();
             }
         }
-        //dr.fillRect(12, 43, 333, 455);
 
-        repaint();
-        requestFocus();
-        setFocusTraversalKeysEnabled(false);
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (py > 0 && (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP)) {
-            py -= 1;
-        } else if (py < 500 && (e.getKeyCode() == KeyEvent.VK_S || e.getKeyCode() == KeyEvent.VK_DOWN)) {
-            py++;
+        if (gc.getInput().isMousePressed(0)) {
+            mX = gc.getInput().getMouseX();
+            mY = gc.getInput().getMouseY();
         }
-        if (px > 0 && (e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT)) {
-            px--;
-        } else if (px < 500 && (e.getKeyCode() == KeyEvent.VK_D || e.getKeyCode() == KeyEvent.VK_RIGHT)) {
-            px++;
-        }
-        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+
+        if (gc.getInput().isKeyPressed(Input.KEY_ESCAPE)) {
             //runs if escape is pressed
             try {
                 FileWriter fw = new FileWriter("save.txt");//set place to write to in "Files"
@@ -221,70 +236,59 @@ dr.translate(px, py);
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {
-    }
+    public void render(GameContainer gc, org.newdawn.slick.Graphics g) throws SlickException {
+        //g.setFont(new Font("TimesRoman", Font.PLAIN, 20));
 
-    @Override
-    public void mouseWheelMoved(MouseWheelEvent e
-    ) {
-        /* if (zoom < 3 && e.getPreciseWheelRotation() < 0) {
-            zoom++;
-        } else if (zoom > 1 && e.getPreciseWheelRotation() > 0) {
-            zoom--;
-        }*/
-    }
+        g.scale(zoom, zoom);
+        g.fillRect(0, 0, 1000, 1000);
+        g.translate(tx, ty);
+        for (int r = 0; r < 20; r++) {
+            for (int c = 0; c < 20; c++) {
+                //g.setStroke(new BasicStroke(1));
 
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        if (System.currentTimeMillis() - time > 50) {
-            if (e.getX() > mX && px > 0) {
-                mX = e.getX();
-                px--;
-            } else if (e.getX() < mX && px < 500) {
-                mX = e.getX();
-                px++;
+                g.setColor(col(grid[r + px][c + py][0]));
+                g.fill(hex[r][c]);
+                g.draw(hex[r][c]);
+                g.setColor(Color.black);
+                g.draw(hex[r][c]);
+
+                if (grid[r + px][c + py][1] != 0) {
+                    g.setColor(Color.red);
+                    g.fillRect(hex[r][c].getCenterX() - (float) 5.5, hex[r][c].getCenterY() - 6, 12, 12);
+                }
             }
-            if (e.getY() > mY && py > 0) {
-                mY = e.getY();
-                py--;
-            } else if (e.getY() < mY && py < 500) {
-                mY = e.getY();
-                py++;
+
+        }
+
+        if (py > 0 && (gc.getInput().isKeyPressed(Input.KEY_W) || gc.getInput().isKeyPressed(Input.KEY_UP))) {
+            if (ty < -60) {
+                ty += 48;
+                py += 2;
+            } else {
+                ty -= 48;
             }
-            time = System.currentTimeMillis();
+        } else if (py < 500 && (gc.getInput().isKeyPressed(Input.KEY_S) || gc.getInput().isKeyPressed(Input.KEY_DOWN))) {
+            if (ty > -60) {
+                ty -= 48;
+                py -= 2;
+            } else {
+                ty += 48;
+            }
+        }
+        if (px > 0 && (gc.getInput().isKeyPressed(Input.KEY_A) || gc.getInput().isKeyPressed(Input.KEY_LEFT))) {
+            if (tx < -60) {
+                tx += 48;
+                px += 2;
+            } else {
+                tx -= 48;
+            }
+        } else if (px < 500 && (gc.getInput().isKeyPressed(Input.KEY_D) || gc.getInput().isKeyPressed(Input.KEY_RIGHT))) {
+            if (tx > -60) {
+                tx -= 48;
+                px -= 2;
+            } else {
+                tx += 48;
+            }
         }
     }
-
-    @Override
-    public void mouseMoved(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-
-    }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-        if (e.getButton() == 2) {
-            mX = e.getX();
-            mY = e.getY();
-        }
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e
-    ) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e
-    ) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e
-    ) {
-    }
-
 }
